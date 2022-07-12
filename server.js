@@ -18,7 +18,7 @@ app.get('/', (req, res) => {
 
 app.post('/prediction', async (req, res) => {
   const { imageUrl } = req.body;
-  const model = loadModel();
+  const model = await loadModel();
 
   if(imageUrl) {
     const response = await fetch(imageUrl);
@@ -29,20 +29,14 @@ app.post('/prediction', async (req, res) => {
       return expand;
     });
     let imageTensorReshaped = tf.image.resizeBilinear(imageTensor,[IMG_SHAPE,IMG_SHAPE])
-    console.log(imageTensorReshaped)
-    await model.then((mod) => {
-      mod.predict(imageTensorReshaped).data()
-      .then(resp => {
-        //console.log(indexOfMax(resp), resp[indexOfMax(resp)])
-        const data = {
-          index: indexOfMax(resp),
-          prob: resp[indexOfMax(resp)]
-        }
-        console.log(data)
-        res.json(data);
-      }) 
-    })
-  }
+    const resp = await model.predict(imageTensorReshaped).data()
+    const data = {
+      index: indexOfMax(resp),
+      prob: resp[indexOfMax(resp)]
+    }
+    console.log(data)
+    res.json(data);
+  } 
 })
 
 const loadModel = async () => {
@@ -73,7 +67,6 @@ function indexOfMax(arr) {
 
   return maxIndex;
 }
-
 
 app.listen(process.env.PORT || 3001, () => {
   console.log(`app is running on port ${process.env.PORT || 3001}`);
